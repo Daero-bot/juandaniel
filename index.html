@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreshRescue </title>
+    <link rel="icon" type="image/jpg" href="https://i.ibb.co/5xKBLzy0/generated-image-5.jpg">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #228B22 0%, #90EE90 50%, #98FB98 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Header mejorado */
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        #logo {
+            width: 90px;
+            height: 90px;
+            margin-bottom: 1rem;
+            border-radius: 50%;
+            box-shadow: 0 15px 40px rgba(34,139,34,0.5);
+            transition: all 0.4s ease;
+        }
+
+        #logo:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        h1 {
+            color: #228B22;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Contenedor principal con grid para rellenar lados */
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 2rem;
+            max-width: 1600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Sidebar izquierda: Mapa y filtros */
+        .sidebar-left {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 2rem;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+            height: fit-content;
+        }
+
+        #map {
+            width: 100%;
+            height: 350px;
+            border-radius: 20px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .filtros {
+            font-size: 0.95rem;
+        }
+
+        .filtros h3 {
+            color: #228B22;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .filtro-group {
+            margin-bottom: 1rem;
+        }
+
+        .filtro-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .filtro-group select, .filtro-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .filtro-group select:focus, .filtro-group input:focus {
+            outline: none;
+            border-color: #FF8C00;
+        }
+
+        /* Contenido central: Ofertas */
+        .ofertas-central {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .ofertas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .oferta {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            gap: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .oferta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #FF8C00, #FFA500, #FF8C00);
+        }
+
+        .oferta:hover {
+            transform: translateY(-15px) scale(1.02);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.25);
+        }
+
+        .oferta img {
+            width: 120px;
+            height: 120px;
+            border-radius: 25px;
+            object-fit: cover;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+            transition: transform 0.4s ease;
+        }
+
+        .oferta:hover img {
+            transform: scale(1.1);
+        }
+
+        .info {
+            flex: 1;
+        }
+
+        .negocio {
+            font-weight: 600;
+            color: #228B22;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .descripcion {
+            font-size: 1.3rem;
+            margin-bottom: 0.8rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .precio {
+            font-size: 2.2rem;
+            color: #FF8C00;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+
+        .precio span {
+            font-size: 0.55em;
+            color: #666;
+            font-weight: 400;
+            text-decoration: line-through;
+            margin-left: 1rem;
+        }
+
+        .caduca {
+            color: #FF6B35;
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #FF8C00, #FFA500);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255,140,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(255,140,0,0.6);
+        }
+
+        .btn:active {
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar derecha: Stats y CTA */
+        .sidebar-right {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(15px);
+            border-radius: 25px;
+            padding: 2rem;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.2);
+            height: fit-content;
+        }
+
+        .stats {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .stat {
+            display: inline-block;
+            background: linear-gradient(135deg, #228B22, #90EE90);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 20px;
+            margin: 0 0.5rem;
+            font-weight: 600;
+            box-shadow: 0 8px 25px rgba(34,139,34,0.4);
+        }
+
+        .cta {
+            text-align: center;
+        }
+
+        .cta h3 {
+            color: #228B22;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(34,139,34,0.95);
+            color: white;
+            margin-top: 4rem;
+            font-weight: 300;
+        }
+
+        .mapa-icon {
+            font-size: 2.5rem;
+            color: #228B22;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                max-width: 1000px;
+            }
+            .sidebar-left, .sidebar-right {
+                order: 3;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .ofertas { grid-template-columns: 1fr; }
+            .oferta { flex-direction: column; text-align: center; }
+            header { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://i.ibb.co/5xKBLzy0/generated-image-5.jpg" alt="FreshRescue Logo" id="logo">
+        <h1>FreshRescue</h1>
+        <p>Rescata comida fresca de locales antes de que caduque</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Sidebar izquierda -->
+        <div class="sidebar-left">
+            <div id="map"></div>
+            <div class="filtros">
+                <h3><i class="fas fa-filter"></i> Filtros</h3>
+                <div class="filtro-group">
+                    <label>Distancia</label>
+                    <select>
+                        <option>Todo cerca (5km)</option>
+                        <option>10km</option>
+                        <option>20km</option>
+                    </select>
+                </div>
+                <div class="filtro-group">
+                    <label>Categoría</label>
+                    <select>
+                        <option>Todas</option>
+                        <option>Panadería</option>
+                        <option>Restaurante</option>
+                        <option>Frutería</option>
+                    </select>
+                </div>
+                <div class="filtro-group">
+                    <label>Precio máx.</label>
+                    <input type="range" min="0" max="20" value="10">
+                    <span>€10</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido central -->
+        <div class="ofertas-central">
+            <div class="ofertas">
+                <div class="oferta">
+                    <img src="https://img.freepik.com/foto-gratis/croissants-tabla-cortar-madera_1150-28480.jpg?sem=taish3_w=740&fit=crop&auto=format&w=740&q=80" alt="Croissants">
+                    <div class="info">
+                        <div class="negocio">Panadería La Esquina</div>
+                        <h3>Croissants frescos (pack 6u)</h3>
+                        <div class="precio">€2.50 <span>antes €6</span></div>
+                        <div class="caduca"><i class="fas fa-clock"></i> Caduca en 2h 40m</div>
+                        <button class="btn">¡Rescatar!</button>
+                    </div>
+                </div>
+
+                <div class="oferta">
+                    <img src="https://images.immediate.co.uk/production/volatile/sites/30/2020/08/paella-837f12c.jpg" alt="Paella">
+                    <div class="info">
+                        <div class="negocio">Restaurante El Puerto</div>
+                        <h3>Paella mixta (2 pax)</h3>
+                        <div class="precio">€8.00 <span>antes €18</span></div>
+                        <div class="caduca"><i class="fas fa-clock"></i> Caduca en 1h 30m</div>
+                        <button class="btn">¡Rescatar!</button>
+                    </div>
+                </div>
+
+                <div class="oferta">
+                    <img src="https://vivelafruta.com/wp-content/uploads/2020/03/cesta-de-fruta-variada-vivelafruta-1.jpg" alt="Fruta">
+                    <div class="info">
+                        <div class="negocio">Frutera Pepe</div>
+                        <h3>Fruta variada (caja)</h3>
+                        <div class="precio">€3.00 <span>antes €9</span></div>
+                        <div class="caduca"><i class="fas fa-clock"></i> Caduca en 3h 20m</div>
+                        <button class="btn">¡Rescatar!</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar derecha -->
+        <div class="sidebar-right">
+            <div class="stats">
+                <div class="stat"><i class="fas fa-leaf"></i> 150kg salvados</div>
+                <div class="stat"><i class="fas fa-users"></i> 2.5k usuarios</div>
+                <div class="stat"><i class="fas fa-euro-sign"></i> €45k ahorrados</div>
+            </div>
+            <div class="cta">
+                <h3>¡Únete ya!</h3>
+                <p>Descarga la app y rescata comida cerca de Chipiona.</p>
+                <button class="btn" style="width: 100%;">Descargar App</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Tu app de comida sostenible <i class="fas fa-leaf"></i></p>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Mapa real con Leaflet (centrado en Chipiona)
+        const map = L.map('map').setView([36.7333, -6.4333], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Marcadores de ejemplo
+        L.marker([36.7333, -6.4333]).addTo(map)
+            .bindPopup('¡Estás aquí! Ofertas cerca.');
+        L.marker([36.735, -6.435]).addTo(map)
+            .bindPopup('Panadería La Esquina');
+
+        console.log('FreshRescue mejorado y listo para producción 🚀');
+    </script>
+</body>
+</html>
